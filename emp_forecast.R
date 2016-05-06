@@ -181,6 +181,7 @@ lines(time, arima.fit, col="red", type ="l")
 
 #adding sarima fit
 lines(time, sarima.fit, col="blue", type ="l")
+
 #adding auto.arima forecast points and lines
 points(n+1, auto.arima.pred, col = "red")
 text(n+2, auto.arima.pred, "182", col="red")
