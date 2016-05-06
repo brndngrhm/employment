@@ -107,13 +107,12 @@ print(aicmat2)
 sarima.fit <- ts(fitted(arima(change, order=c(0, 1, 1), seasonal = c(4, 1, 1))), frequency = 12)
 
 #regresion with arma errors ----
-jobs2 <- log(emp$jobs)
 month2 <- emp$month
-t <- seq(1:924)
+t <- seq(1:194)
 t2 <- emp$t^2
 
 
-lm <- lm(jobs2[2:924] ~ t[1:923] + jobs2[1:923] + factor(month2[1:923]))
+lm <- lm(change[2:194] ~ t[1:193] + change[1:193] + factor(month2[1:193]))
 summary(lm)
 
 resids <- lm$residuals
