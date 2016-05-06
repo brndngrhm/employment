@@ -65,7 +65,7 @@ jobs<- ts(jobs, frequency = 12)
 change <- diff(jobs)
 date2 <- emp$date[1:194]
 
-#plot2 ----
+#plots ----
 plot(jobs, type="l")
 (jobs.plot <- ggplot(emp, aes(x=date, y=jobs)) + geom_line())
 acf2(jobs)
@@ -80,10 +80,10 @@ acf2(diff.jobs)
 #auto-arima ----
 (model1 <- auto.arima(change))
 arima.fit <- ts(fitted(arima(change, order=c(0,1,1), seasonal = c(2,0,0)), frequency = 12))
-auto.arima.forecast <- sarima.for(change,6,1,0,0,0,0,0,12) #6 month forecast
+auto.arima.forecast <- sarima.for(change,1,1,0,0,0,0,0,12) #1 month forecast
 auto.arima.forecast$pred  
 
-#sarima
+#sarima ----
 uplim=4
 aicmat <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
 for (i in 0:uplim){
@@ -101,11 +101,10 @@ print(aicmat2)
 
 (sarima(change,0,1,1,4,1,1,12,details = F))
 
-(sarima <- sarima.for(change,6,0,1,1,4,1,1,12))
+(sarima <- sarima.for(change,1,0,1,1,4,1,1,12))
 
 #sarima fit
 sarima.fit <- ts(fitted(arima(change, order=c(0, 1, 1), seasonal = c(4, 1, 1))), frequency = 12)
-
 
 #regresion with arma errors ----
 jobs2 <- log(emp$jobs)
@@ -158,13 +157,13 @@ reg.arma.fit <- fitted(fit)
 #setting plot parameters
 n <- length(change)
 time <- seq(1:n)
-auto.arima.time <- seq(n+1, n+6)
-sarima.time <- seq(n+1, n+6)
+auto.arima.time <- n+1
+sarima.time <- n+1
 auto.arima.pred <- auto.arima.forecast$pred
 sarima.pred <- sarima$pred
 
 #base plot
-plot(time, change, type = "p", xlim=c(n-n, n+10))
+plot(time, change, type = "p", xlim=c(n-10, n+10))
 
 #adding auto-arima fit
 lines(time, arima.fit, col="red", type ="l")
@@ -173,22 +172,16 @@ lines(time, arima.fit, col="red", type ="l")
 lines(time, sarima.fit, col="blue", type ="l")
 
 #adding auto.arima forecast points and lines
-points(n+1, auto.arima.forecast$pred[1])
-points(n+2, auto.arima.forecast$pred[2])
-points(n+3, auto.arima.forecast$pred[3])
-points(n+4, auto.arima.forecast$pred[4])
-points(n+5, auto.arima.forecast$pred[5])
-points(n+6, auto.arima.forecast$pred[6])
-lines(auto.arima.time, auto.arima.pred, type="l", col = "red")
+points(n+1, auto.arima.pred, col = "red")
+text(n+2, auto.arima.pred, "182", col="red")
 
 #adding sarima forecast points and lines
-points(n+1, sarima$pred[1])
-points(n+2, sarima$pred[2])
-points(n+3, sarima$pred[3])
-points(n+4, sarima$pred[4])
-points(n+5, sarima$pred[5])
-points(n+6, sarima$pred[6])
-lines(auto.arima.time, sarima.pred, type="l", col = "blue")
+points(n+1, sarima$pred, col = "blue")
+text(n+1, sarima$pred+55, "217", col="blue")
+
+#adding actual employment number forecast points and lines
+points(n+1, 160, col = "green")
+text(n+1, 120, "160", col="green")
 
 #actual change in jobs
 
