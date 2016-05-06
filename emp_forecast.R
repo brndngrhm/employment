@@ -162,8 +162,8 @@ sarima.time <- n+1
 auto.arima.pred <- auto.arima.forecast$pred
 sarima.pred <- sarima$pred
 
-#base plot
-plot(time, change, type = "p", xlim=c(n-10, n+10))
+#base plot, checking fit
+plot(time, change, type = "p")
 
 #adding auto-arima fit
 lines(time, arima.fit, col="red", type ="l")
@@ -171,6 +171,14 @@ lines(time, arima.fit, col="red", type ="l")
 #adding sarima fit
 lines(time, sarima.fit, col="blue", type ="l")
 
+#base plot for adding forecast points
+plot(time, change, type = "p", xlim=c(n-10, n+10))
+
+#adding auto-arima fit
+lines(time, arima.fit, col="red", type ="l")
+
+#adding sarima fit
+lines(time, sarima.fit, col="blue", type ="l")
 #adding auto.arima forecast points and lines
 points(n+1, auto.arima.pred, col = "red")
 text(n+2, auto.arima.pred, "182", col="red")
@@ -182,6 +190,4 @@ text(n+1, sarima$pred+55, "217", col="blue")
 #adding actual employment number forecast points and lines
 points(n+1, 160, col = "green")
 text(n+1, 120, "160", col="green")
-
-#actual change in jobs
 
