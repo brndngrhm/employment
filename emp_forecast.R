@@ -107,6 +107,9 @@ print(aicmat2)
 sarima.fit <- ts(fitted(arima(change, order=c(0, 1, 1), seasonal = c(4, 1, 1))), frequency = 12)
 
 #regresion with arma errors ----
+#download different things like monthly gdp, income, manufacturing, stock market ...
+#and check ccf with change in jobs to see if any could be leading indicators
+
 month2 <- emp$month
 t <- seq(1:194)
 t2 <- emp$t^2
