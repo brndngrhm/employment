@@ -136,6 +136,15 @@ manuf <- manuf %>% select(date, year, month, gacdfna)
 manuf.ts <- ts(manuf$gacdfna, frequency = 12)
 manuf.change <- diff(manuf.ts)
 
+#SM Non-manufacturing: Business Activity Index from https://research.stlouisfed.org/fred2/series/NMFBAI# ----
+#need to manually download monthly
+x.bai <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/bai.csv")
+bai <- as.data.frame(read.csv(text = x.bai, strip.white = T))
+bai$date <- ymd(as.character(bai$date))
+
+bai.ts <- ts(bai$nmfbai, frequency = 12)
+bai.change <- diff(bai.ts)
+
 #exploratory plots ----
 
 #jobs
@@ -204,17 +213,20 @@ sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(4, 1, 1
 #download different things like monthly gdp, income, manufacturing, stock market ...
 #and check ccf with change in jobs to see if any could be leading indicators
 
-manuf.ccf <- ccf(manuf.change, emp.change) #2,4,6,9,12,14,16 months
-sp.ccf <- ccf(sp.change, emp.change) #6,11,16,19 months
+manuf.ccf <- ccf(manuf.change, emp.change) #2,4,6,9,12,14,16 months ahead
+sp.ccf <- ccf(sp.change, emp.change) #6,11,16,19 months ahead
+bai.ccf <- ccf(bai.change, emp.change) #1,5,8,9,11,13,14,16 months ahead
 
 month2 <- emp$month
-t <- seq(1:194)
+t <- seq(1:195)
 t2 <- t^2
 
 lm <- lm(emp.change[21:195] ~ t[20:194] + t2[20:194] + emp.change[20:194] + 
            manuf.change[19:193] + manuf.change[17:191] + manuf.change[15:189] + manuf.change[12:186] + 
            manuf.change[9:183] + manuf.change[7:181] + manuf.change[5:179] + 
            sp.change[15:189] + sp.change[10:184] + sp.change[5:179] + sp.change[2:176] + 
+           bai.change[20:194] + bai.change[16:190] +bai.change[13:187] + bai.change[12:186] + bai.change[10:184] +
+           bai.change[8:182] + bai.change[7:181] + bai.change[5:179] +
            factor(month2[20:194]))
 summary(lm)
 
@@ -222,8 +234,10 @@ step(lm, direction='forward')
 step(lm, direction='backward')
 step(lm, direction='both')
 
-lm2 <- lm(emp.change[21:195] ~ t2[20:194] + emp.change[20:194] + 
-           manuf.change[15:189] + manuf.change[5:179] + sp.change[2:176])
+lm2 <- lm(emp.change[21:195] ~ t2[20:194] + emp.change[20:194] + manuf.change[17:191] + 
+           manuf.change[15:189] + manuf.change[5:179] + 
+            sp.change[2:176] + sp.change[10:184] + 
+            bai.change[20:194] + bai.change[16:190] + bai.change[10:184] + bai.change[8:182])
 
 summary(lm2)
 
@@ -251,12 +265,20 @@ acf2(diff(resids))
 sarima(resids,1,1,1,0,0,0,12,details=F)
 
 #doing the forecat
-regressors <- cbind(emp.change[20:194], manuf.change[15:189], manuf.change[5:179], sp.change[2:176])
+regressors <- cbind(t2[20:194], emp.change[20:194], manuf.change[17:191], manuf.change[15:189], manuf.change[5:179],
+                    sp.change[2:176], bai.change[20:194], bai.change[16:190], bai.change[10:184], bai.change[8:182])
+future.t2 <- t2[195]
 future.emp.change <- emp.change[195]
-future.manuf1 <- manuf.change[190]
-future.manuf2 <- manuf.change[180]
+future.manuf1 <- manuf.change[192]
+future.manuf2 <- manuf.change[190]
+future.manuf3 <- manuf.change[180]
 future.sp <- sp.change[177]
-future.vals <- cbind(future.emp.change, future.manuf1, future.manuf2, future.sp)
+future.bai1 <- bai.change[195]
+future.bai2 <- bai.change[191]
+future.bai3 <- bai.change[185]
+future.bai4 <- bai.change[183]
+future.vals <- cbind(future.t2, future.emp.change, future.manuf1, future.manuf2, future.manuf3, 
+                     future.sp, future.bai1, future.bai2, future.bai3, future.bai4)
 
 fit <- Arima(emp.change[21:195],order=c(1,1,1), xreg=regressors)
 
@@ -309,11 +331,11 @@ text(n+2, auto.arima.pred, "182", col="red")
 points(n+1, sarima$pred, col = "blue")
 text(n+1, sarima$pred+55, "217", col="blue")
 
-#adding sarima forecast points and lines
-points(n+1, 196.9909, col = "green")
-text(n+2, 196.9909, "196", col="green")
+#adding reg.arma  forecast points and lines
+points(n+1, 205.012, col = "green")
+text(n+2, 205.012, "205", col="green")
 
-#composite change in NFP forecast = 198,000----
+#composite change in NFP forecast = 201,000 ----
 
 #forecast websites: 
 #https://www.estimize.com/economic_indicators/us-change-in-nonfarm-payrolls
