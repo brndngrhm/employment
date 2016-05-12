@@ -313,5 +313,9 @@ text(n+1, sarima$pred+55, "217", col="blue")
 points(n+1, 196.9909, col = "green")
 text(n+2, 196.9909, "196", col="green")
 
-#composite change in jobs forecast = 198.3333
+#composite change in NFP forecast = 198,000----
+
+#forecast websites: 
+#https://www.estimize.com/economic_indicators/us-change-in-nonfarm-payrolls
+#http://www.tradingeconomics.com/united-states/non-farm-payrolls
 
