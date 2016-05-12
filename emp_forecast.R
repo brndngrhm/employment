@@ -57,8 +57,6 @@ emp <- emp %>% select(date, year, month, jobs)
 emp <- emp %>% arrange(date)
 
 emp.ts <- ts(emp$jobs, frequency = 12)
-#emp.ts <- jobs[1:195]
-#emp.ts<- ts(emp.ts, frequency = 12)
 emp.change <- diff(emp.ts)
 date2 <- emp$date[1:195]
 
@@ -74,8 +72,6 @@ sp$year <- year(sp$date)
 sp <- sp %>% select(date, year, month, adj.close)
 
 sp.ts <- ts(sp$adj.close, frequency = 12)
-#sp.ts <- sp.ts[1:195]
-#sp.ts<- ts(sp.ts, frequency = 12)
 sp.change <- diff(sp.ts)
 
 #manufacturing data from https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data ----
@@ -138,11 +134,9 @@ manuf <- manuf %>% dplyr::filter(year > 1999)
 manuf <- manuf %>% select(date, year, month, gacdfna)
 
 manuf.ts <- ts(manuf$gacdfna, frequency = 12)
-#manuf.ts <- manuf.ts[1:195]
-#manuf.ts<- ts(manuf.ts, frequency = 12)
 manuf.change <- diff(manuf.ts)
 
-#plots ----
+#exploratory plots ----
 
 #jobs
 plot(emp.ts, type="l")
@@ -184,20 +178,20 @@ auto.arima.forecast <- sarima.for(emp.change,1,1,0,0,0,0,0,12) #1 month forecast
 auto.arima.forecast$pred  
 
 #sarima ----
-uplim=4
-aicmat <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
-for (i in 0:uplim){
-  for (j in 0:uplim){
-    aicmat[i+1,j+1]=sarima(emp.change,0,1,0,i,1,j,12,details=F,tol=0.001)$AIC}}
+#uplim=4
+#aicmat <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
+#for (i in 0:uplim){
+  #for (j in 0:uplim){
+    #aicmat[i+1,j+1]=sarima(emp.change,0,1,0,i,1,j,12,details=F,tol=0.001)$AIC}}
 
-print(aicmat)
+#print(aicmat)
 
-aicmat2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
-for (i in 0:uplim){
-  for (j in 0:uplim){
-    aicmat2[i+1,j+1]<-sarima(emp.change, i, 1, j, 4, 1, 1, 12, details=F, tol=0.001)$AIC}}
+#aicmat2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
+#for (i in 0:uplim){
+  #for (j in 0:uplim){
+    #aicmat2[i+1,j+1]<-sarima(emp.change, i, 1, j, 4, 1, 1, 12, details=F, tol=0.001)$AIC}}
 
-print(aicmat2)
+#print(aicmat2)
 
 (sarima(emp.change,0,1,1,4,1,1,12,details = F))
 
@@ -238,20 +232,20 @@ plot(resids, type="l")
 acf2(resids)
 acf2(diff(resids))
 
-uplim=4
-aicmat.resids <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
-for (i in 0:uplim){
-  for (j in 0:uplim){
-    aicmat.resids[i+1,j+1]=sarima(resids,0,1,0,i,0,j,12,details=F,tol=0.001)$AIC}}
+#uplim=4
+#aicmat.resids <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
+#for (i in 0:uplim){
+  #for (j in 0:uplim){
+    #aicmat.resids[i+1,j+1]=sarima(resids,0,1,0,i,0,j,12,details=F,tol=0.001)$AIC}}
 
-print(aicmat.resids)
+#print(aicmat.resids)
 
-aicmat.resids2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
-for (i in 0:uplim){
-  for (j in 0:uplim){
-    aicmat.resids2[i+1,j+1]<-sarima(resids, i, 1, j, 1, 0, 0, 12, details=F, tol=0.001)$AIC}}
+#aicmat.resids2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
+#for (i in 0:uplim){
+  #for (j in 0:uplim){
+    #aicmat.resids2[i+1,j+1]<-sarima(resids, i, 1, j, 1, 0, 0, 12, details=F, tol=0.001)$AIC}}
 
-print(aicmat.resids2)
+#print(aicmat.resids2)
 
 #resids model
 sarima(resids,1,1,1,0,0,0,12,details=F)
@@ -319,5 +313,5 @@ text(n+1, sarima$pred+55, "217", col="blue")
 points(n+1, 196.9909, col = "green")
 text(n+2, 196.9909, "196", col="green")
 
-#scomposite fcast = 198.3333
+#composite change in jobs forecast = 198.3333
 
