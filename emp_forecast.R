@@ -57,10 +57,10 @@ emp <- emp %>% select(date, year, month, jobs)
 emp <- emp %>% arrange(date)
 
 emp.ts <- ts(emp$jobs, frequency = 12)
-emp.ts <- jobs[1:195]
-emp.ts<- ts(emp.ts, frequency = 12)
+#emp.ts <- jobs[1:195]
+#emp.ts<- ts(emp.ts, frequency = 12)
 emp.change <- diff(emp.ts)
-date2 <- emp$date[1:194]
+date2 <- emp$date[1:195]
 
 #sp 500 data from https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m ----
 x.sp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/sp_500.csv")
@@ -74,8 +74,8 @@ sp$year <- year(sp$date)
 sp <- sp %>% select(date, year, month, adj.close)
 
 sp.ts <- ts(sp$adj.close, frequency = 12)
-sp.ts <- sp.ts[1:195]
-sp.ts<- ts(sp.ts, frequency = 12)
+#sp.ts <- sp.ts[1:195]
+#sp.ts<- ts(sp.ts, frequency = 12)
 sp.change <- diff(sp.ts)
 
 #manufacturing data from https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data ----
@@ -138,8 +138,8 @@ manuf <- manuf %>% dplyr::filter(year > 1999)
 manuf <- manuf %>% select(date, year, month, gacdfna)
 
 manuf.ts <- ts(manuf$gacdfna, frequency = 12)
-manuf.ts <- manuf.ts[1:195]
-manuf.ts<- ts(manuf.ts, frequency = 12)
+#manuf.ts <- manuf.ts[1:195]
+#manuf.ts<- ts(manuf.ts, frequency = 12)
 manuf.change <- diff(manuf.ts)
 
 #plots ----
@@ -195,7 +195,7 @@ print(aicmat)
 aicmat2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
 for (i in 0:uplim){
   for (j in 0:uplim){
-    aicmat2[i+1,j+1]<-sarima(emp.change, i, 1, j, 3, 1, 1, 12, details=F, tol=0.001)$AIC}}
+    aicmat2[i+1,j+1]<-sarima(emp.change, i, 1, j, 4, 1, 1, 12, details=F, tol=0.001)$AIC}}
 
 print(aicmat2)
 
@@ -210,49 +210,61 @@ sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(4, 1, 1
 #download different things like monthly gdp, income, manufacturing, stock market ...
 #and check ccf with change in jobs to see if any could be leading indicators
 
-manuf.ccf <- ccf(manuf.change, emp.change) #14 months
-sp.ccf <- ccf(sp.change, emp.change) #19 months
+manuf.ccf <- ccf(manuf.change, emp.change) #2,4,6,9,12,14,16 months
+sp.ccf <- ccf(sp.change, emp.change) #6,11,16,19 months
 
 month2 <- emp$month
 t <- seq(1:194)
-t2 <- emp$t^2
+t2 <- t^2
 
-
-lm <- lm(emp.change[20:194] ~ t[19:193] + t2[19:193] + emp.change[19:193] + manuf.change[6:180] + 
-           sp.change[1:175] + factor(month2[19:193]))
+lm <- lm(emp.change[21:195] ~ t[20:194] + t2[20:194] + emp.change[20:194] + 
+           manuf.change[19:193] + manuf.change[17:191] + manuf.change[15:189] + manuf.change[12:186] + 
+           manuf.change[9:183] + manuf.change[7:181] + manuf.change[5:179] + 
+           sp.change[15:189] + sp.change[10:184] + sp.change[5:179] + sp.change[2:176] + 
+           factor(month2[20:194]))
 summary(lm)
 
-resids <- lm$residuals
+step(lm, direction='forward')
+step(lm, direction='backward')
+step(lm, direction='both')
+
+lm2 <- lm(emp.change[21:195] ~ t2[20:194] + emp.change[20:194] + 
+           manuf.change[15:189] + manuf.change[5:179] + sp.change[2:176])
+
+summary(lm2)
+
+resids <- lm2$residuals
 plot(resids, type="l")
 acf2(resids)
+acf2(diff(resids))
 
 uplim=4
 aicmat.resids <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
 for (i in 0:uplim){
   for (j in 0:uplim){
-    aicmat.resids[i+1,j+1]=sarima(resids,0,1,0,i,1,j,12,details=F,tol=0.001)$AIC}}
+    aicmat.resids[i+1,j+1]=sarima(resids,0,1,0,i,0,j,12,details=F,tol=0.001)$AIC}}
 
 print(aicmat.resids)
 
 aicmat.resids2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
 for (i in 0:uplim){
   for (j in 0:uplim){
-    aicmat.resids2[i+1,j+1]<-sarima(resids, i, 1, j, 1, 1, 3, 12, details=F, tol=0.001)$AIC}}
+    aicmat.resids2[i+1,j+1]<-sarima(resids, i, 1, j, 1, 0, 0, 12, details=F, tol=0.001)$AIC}}
 
 print(aicmat.resids2)
 
 #resids model
-sarima(resids,1,1,1,1,1,3,12,details=F)
+sarima(resids,1,1,1,0,0,0,12,details=F)
 
 #doing the forecat
+regressors <- cbind(emp.change[20:194], manuf.change[15:189], manuf.change[5:179], sp.change[2:176])
+future.emp.change <- emp.change[195]
+future.manuf1 <- manuf.change[190]
+future.manuf2 <- manuf.change[180]
+future.sp <- sp.change[177]
+future.vals <- cbind(future.emp.change, future.manuf1, future.manuf2, future.sp)
 
-regressors <- cbind(t[1:923], jobs2[1:923], factor(month2[1:923]))
-future.time <- c(924)
-future.jobs2 <- c(11.87837)
-future.month <- factor("Jan")
-future.vals <- cbind(future.time, future.jobs2, future.month)
-
-fit <- Arima(jobs2[2:924],order=c(1,1,1), seasonal = c(1,1,3), xreg=regressors)
+fit <- Arima(emp.change[21:195],order=c(1,1,1), xreg=regressors)
 
 fcast <- forecast(fit, h=1, xreg=future.vals)
 
@@ -267,6 +279,7 @@ auto.arima.time <- n+1
 sarima.time <- n+1
 auto.arima.pred <- auto.arima.forecast$pred
 sarima.pred <- sarima$pred
+reg.arma.pred <- fcast
 
 #base plot, checking fit
 plot(time, emp.change, type = "p")
@@ -277,6 +290,11 @@ lines(time, arima.fit, col="red", type ="l")
 #adding sarima fit
 lines(time, sarima.fit, col="blue", type ="l")
 
+#adding reg.arma errors fit
+lines(time[21:195], reg.arma.fit, col="green", type="l")
+
+
+
 #base plot for adding forecast points
 plot(time, emp.change, type = "p", xlim=c(n-10, n+10))
 
@@ -286,6 +304,9 @@ lines(time, arima.fit, col="red", type ="l")
 #adding sarima fit
 lines(time, sarima.fit, col="blue", type ="l")
 
+#adding reg.arma errors fit
+lines(time[21:195], reg.arma.fit, col="green", type="l")
+
 #adding auto.arima forecast points and lines
 points(n+1, auto.arima.pred, col = "red")
 text(n+2, auto.arima.pred, "182", col="red")
@@ -294,7 +315,9 @@ text(n+2, auto.arima.pred, "182", col="red")
 points(n+1, sarima$pred, col = "blue")
 text(n+1, sarima$pred+55, "217", col="blue")
 
-#adding actual employment number forecast points and lines
-points(n+1, 160, col = "green")
-text(n+1, 120, "160", col="green")
+#adding sarima forecast points and lines
+points(n+1, 196.9909, col = "green")
+text(n+2, 196.9909, "196", col="green")
+
+#scomposite fcast = 198.3333
 
