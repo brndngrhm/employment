@@ -17,11 +17,7 @@ library(car)
 library(forecast)
 library(fGarch)
 
-#load data in ----
-#data from http://www.adpemploymentreport.com/
-#and is # of employees in U.S. nonfarm private sector employment
-
-#http://www.bls.gov/news.release/empsit.nr0.htm ----
+#jobs data from http://www.bls.gov/news.release/empsit.nr0.htm ----
 #http://www.bls.gov/webapps/legacy/cesbtab1.htm
 #use 2nd link to manually pull data each month, use seasonally adjusted, total nonfarm
 x.emp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/emp.csv")
@@ -60,19 +56,32 @@ emp$month <- month(emp$date, label = T)
 emp <- emp %>% select(date, year, month, jobs)
 emp <- emp %>% arrange(date)
 
-jobs <- ts(emp$jobs, frequency = 12)
-jobs <- jobs[1:195]
-jobs<- ts(jobs, frequency = 12)
-change <- diff(jobs)
+emp.ts <- ts(emp$jobs, frequency = 12)
+emp.ts <- jobs[1:195]
+emp.ts<- ts(emp.ts, frequency = 12)
+emp.change <- diff(emp.ts)
 date2 <- emp$date[1:194]
 
 #sp 500 data from https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m ----
+x.sp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/sp_500.csv")
+sp <- as.data.frame(read.csv(text = x.sp, strip.white = T))
+names(sp) <- tolower(names(sp))
+sp <- sp %>% select(date, adj.close)
+sp$date <- ydm(sp$date)
+sp$date <- ymd(sp$date)
+sp$month <- month(sp$date, label = T)
+sp$year <- year(sp$date)
+sp <- sp %>% select(date, year, month, adj.close)
 
-
+sp.ts <- ts(sp$adj.close, frequency = 12)
+sp.ts <- sp.ts[1:195]
+sp.ts<- ts(sp.ts, frequency = 12)
+sp.change <- diff(sp.ts)
 
 #manufacturing data from https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data ----
 #definitions from https://www.philadelphiafed.org/-/media/research-and-data/regional-economy/business-outlook-survey/readme.txt?la=en
 #want the column titled gacdfna - "general activity index"
+#this pulls directly from website, dont need to manually download to update
 
 #read in data
 x.manuf <- getURL("https://www.philadelphiafed.org/-/media/research-and-data/regional-economy/business-outlook-survey/historical-data/data-series/bos_history.csv?la=en")
@@ -127,23 +136,51 @@ manuf$month <- month(manuf$date, label = T)
 manuf$year <- year(manuf$date)
 manuf <- manuf %>% dplyr::filter(year > 1999)
 manuf <- manuf %>% select(date, year, month, gacdfna)
-#this pulls directly from website, dont need to manually download to update
+
+manuf.ts <- ts(manuf$gacdfna, frequency = 12)
+manuf.ts <- manuf.ts[1:195]
+manuf.ts<- ts(manuf.ts, frequency = 12)
+manuf.change <- diff(manuf.ts)
+
 #plots ----
-plot(jobs, type="l")
-(jobs.plot <- ggplot(emp, aes(x=date, y=jobs)) + geom_line())
-acf2(jobs)
 
-plot(date2, change, type="l")
-acf2(change)
+#jobs
+plot(emp.ts, type="l")
+acf2(emp.ts)
 
-diff.jobs <- diff(change)
-plot(diff.jobs, type="l")
-acf2(diff.jobs)
+plot(date2, emp.change, type="l")
+acf2(emp.change)
+
+diff.emp.ts <- diff(emp.change)
+plot(diff.emp.ts, type="l")
+acf2(diff.emp.ts)
+
+#manuf
+plot(manuf.ts, type="l")
+acf2(manuf.ts)
+
+plot(date2, manuf.change, type="l")
+acf2(emp.change)
+
+diff.manuf.ts <- diff(manuf.change)
+plot(diff.manuf.ts, type="l")
+acf2(diff.manuf.ts)
+
+#s&p
+plot(sp.ts, type="l")
+acf2(sp.ts)
+
+plot(date2, sp.change, type="l")
+acf2(sp.change)
+
+diff.sp.ts <- diff(sp.change)
+plot(diff.sp.ts, type="l")
+acf2(diff.sp.ts)
 
 #auto-arima ----
-(model1 <- auto.arima(change))
-arima.fit <- ts(fitted(arima(change, order=c(0,1,1), seasonal = c(2,0,0)), frequency = 12))
-auto.arima.forecast <- sarima.for(change,1,1,0,0,0,0,0,12) #1 month forecast
+(model1 <- auto.arima(emp.change))
+arima.fit <- ts(fitted(arima(emp.change, order=c(0,1,1), seasonal = c(2,0,0)), frequency = 12))
+auto.arima.forecast <- sarima.for(emp.change,1,1,0,0,0,0,0,12) #1 month forecast
 auto.arima.forecast$pred  
 
 #sarima ----
@@ -151,34 +188,38 @@ uplim=4
 aicmat <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
 for (i in 0:uplim){
   for (j in 0:uplim){
-    aicmat[i+1,j+1]=sarima(change,0,1,0,i,1,j,12,details=F,tol=0.001)$AIC}}
+    aicmat[i+1,j+1]=sarima(emp.change,0,1,0,i,1,j,12,details=F,tol=0.001)$AIC}}
 
 print(aicmat)
 
 aicmat2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
 for (i in 0:uplim){
   for (j in 0:uplim){
-    aicmat2[i+1,j+1]<-sarima(change, i, 1, j, 3, 1, 1, 12, details=F, tol=0.001)$AIC}}
+    aicmat2[i+1,j+1]<-sarima(emp.change, i, 1, j, 3, 1, 1, 12, details=F, tol=0.001)$AIC}}
 
 print(aicmat2)
 
-(sarima(change,0,1,1,4,1,1,12,details = F))
+(sarima(emp.change,0,1,1,4,1,1,12,details = F))
 
-(sarima <- sarima.for(change,1,0,1,1,4,1,1,12))
+(sarima <- sarima.for(emp.change,1,0,1,1,4,1,1,12))
 
 #sarima fit
-sarima.fit <- ts(fitted(arima(change, order=c(0, 1, 1), seasonal = c(4, 1, 1))), frequency = 12)
+sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(4, 1, 1))), frequency = 12)
 
 #regresion with arma errors ----
 #download different things like monthly gdp, income, manufacturing, stock market ...
 #and check ccf with change in jobs to see if any could be leading indicators
+
+manuf.ccf <- ccf(manuf.change, emp.change) #14 months
+sp.ccf <- ccf(sp.change, emp.change) #19 months
 
 month2 <- emp$month
 t <- seq(1:194)
 t2 <- emp$t^2
 
 
-lm <- lm(change[2:194] ~ t[1:193] + change[1:193] + factor(month2[1:193]))
+lm <- lm(emp.change[20:194] ~ t[19:193] + t2[19:193] + emp.change[19:193] + manuf.change[6:180] + 
+           sp.change[1:175] + factor(month2[19:193]))
 summary(lm)
 
 resids <- lm$residuals
@@ -220,7 +261,7 @@ reg.arma.fit <- fitted(fit)
 #plotting stuff ----
 
 #setting plot parameters
-n <- length(change)
+n <- length(emp.change)
 time <- seq(1:n)
 auto.arima.time <- n+1
 sarima.time <- n+1
@@ -228,7 +269,7 @@ auto.arima.pred <- auto.arima.forecast$pred
 sarima.pred <- sarima$pred
 
 #base plot, checking fit
-plot(time, change, type = "p")
+plot(time, emp.change, type = "p")
 
 #adding auto-arima fit
 lines(time, arima.fit, col="red", type ="l")
@@ -237,7 +278,7 @@ lines(time, arima.fit, col="red", type ="l")
 lines(time, sarima.fit, col="blue", type ="l")
 
 #base plot for adding forecast points
-plot(time, change, type = "p", xlim=c(n-10, n+10))
+plot(time, emp.change, type = "p", xlim=c(n-10, n+10))
 
 #adding auto-arima fit
 lines(time, arima.fit, col="red", type ="l")
