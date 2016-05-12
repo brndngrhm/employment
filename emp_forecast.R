@@ -21,8 +21,9 @@ library(fGarch)
 #data from http://www.adpemploymentreport.com/
 #and is # of employees in U.S. nonfarm private sector employment
 
-#http://www.bls.gov/news.release/empsit.nr0.htm
+#http://www.bls.gov/news.release/empsit.nr0.htm ----
 #http://www.bls.gov/webapps/legacy/cesbtab1.htm
+#use 2nd link to manually pull data each month, use seasonally adjusted, total nonfarm
 x.emp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/emp.csv")
 emp <- as.data.frame(read.csv(text = x.emp, strip.white = T))
 emp$X <- NULL
@@ -65,6 +66,68 @@ jobs<- ts(jobs, frequency = 12)
 change <- diff(jobs)
 date2 <- emp$date[1:194]
 
+#sp 500 data from https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m ----
+
+
+
+#manufacturing data from https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data ----
+#definitions from https://www.philadelphiafed.org/-/media/research-and-data/regional-economy/business-outlook-survey/readme.txt?la=en
+#want the column titled gacdfna - "general activity index"
+
+#read in data
+x.manuf <- getURL("https://www.philadelphiafed.org/-/media/research-and-data/regional-economy/business-outlook-survey/historical-data/data-series/bos_history.csv?la=en")
+manuf <- as.data.frame(read.csv(text = x.manuf, strip.white = T))
+names(manuf) <- tolower(names(manuf))
+manuf <- manuf %>% select(date, gacdfna)
+
+#Foratting the date 
+date <- data.frame(manuf$date)
+date <- separate(date, col="manuf.date", into = c("month", "year"), sep="-")
+year <- as.numeric(date$year)
+n <- length(year)
+year2 <- year[1:380] 
+year3 <- paste(19, year2, sep='')
+year3 <- data.frame(year3)
+year4 <- year[381:n]
+year4.1 <- year4[1:120]
+year4.1 <- paste(200, year4.1, sep='')
+year4.1 <- data.frame(year4.1)
+year4.2 <- year4[121:196]
+year4.2 <- paste(20, year4.2, sep='')
+year4.2 <- data.frame(year4.2)
+names(year4.2)[1] <- "year4.1"
+year4 <- rbind(year4.1, year4.2)
+names(year4)[1] <- "year3"
+year <- rbind(year3, year4)
+date <- cbind(date, year)
+date$month2 <- "01"
+date$month2[date$month == "Feb"] <- "02"
+date$month2[date$month == "Mar"] <- "03"
+date$month2[date$month == "Apr"] <- "04"
+date$month2[date$month == "May"] <- "05"
+date$month2[date$month == "Jun"] <- "06"
+date$month2[date$month == "Jul"] <- "07"
+date$month2[date$month == "Aug"] <- "08"
+date$month2[date$month == "Sep"] <- "09"
+date$month2[date$month == "Oct"] <- "10"
+date$month2[date$month == "Nov"] <- "11"
+date$month2[date$month == "Dec"] <- "12"
+date$date2 <- paste(date$month2, "01", date$year3, sep='-')
+date$date <- paste(date$month, date$year, sep='-')
+date$month <- NULL
+date$year <- NULL
+date$month2 <- NULL
+date$year3 <- NULL
+date$date <- as.factor(date$date)
+manuf <- left_join(manuf, date, by = "date")
+manuf$date <- NULL
+names(manuf)[2] <- "date"
+manuf$date <- mdy(manuf$date)
+manuf$month <- month(manuf$date, label = T)
+manuf$year <- year(manuf$date)
+manuf <- manuf %>% dplyr::filter(year > 1999)
+manuf <- manuf %>% select(date, year, month, gacdfna)
+#this pulls directly from website, dont need to manually download to update
 #plots ----
 plot(jobs, type="l")
 (jobs.plot <- ggplot(emp, aes(x=date, y=jobs)) + geom_line())
