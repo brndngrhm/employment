@@ -1,5 +1,6 @@
 #employment forecast project
 #http://www.census.gov/economic-indicators/
+#http://www.census.gov/econ/currentdata/dbsearch?program=M3&startYear=1992&endYear=2016&categories=MTM&dataType=VS&geoLevel=US&adjusted=1&notAdjusted=0&errorData=0
 
 #packages ----
 library(dplyr)
@@ -21,6 +22,7 @@ library(fGarch)
 #jobs data from http://www.bls.gov/news.release/empsit.nr0.htm ----
 #http://www.bls.gov/webapps/legacy/cesbtab1.htm
 #use 2nd link to manually pull data each month, use seasonally adjusted, total nonfarm
+
 x.emp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/emp.csv")
 emp <- as.data.frame(read.csv(text = x.emp, strip.white = T))
 emp$X <- NULL
@@ -316,14 +318,12 @@ auto.arima.forecast$pred
 sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(4, 1, 1))), frequency = 12)
 
 #regresion with arma errors ----
-#download different things like monthly gdp, income, manufacturing, stock market ...
-#and check ccf with change in jobs to see if any could be leading indicators
 
 manuf.ccf <- ccf(manuf.change, emp.change) #2,4,6,9,12,14,16 months ahead
 sp.ccf <- ccf(sp.change, emp.change) #6,11,16,19 months ahead
 bai.ccf <- ccf(bai.change, emp.change) #1,5,8,9,11,13,14,16 months ahead
-cpi.ccf <- ccf(cpi.change, emp.change)
-starts.ccf <- ccf(starts.change, emp.change)
+cpi.ccf <- ccf(cpi.change, emp.change) #1,2,3,4,17,18
+starts.ccf <- ccf(starts.change, emp.change) #2,7,10,12
 
 month2 <- emp$month
 t <- seq(1:195)
@@ -334,7 +334,8 @@ lm <- lm(emp.change[21:195] ~ t[20:194] + t2[20:194] + emp.change[20:194] +
            manuf.change[9:183] + manuf.change[7:181] + manuf.change[5:179] + 
            sp.change[15:189] + sp.change[10:184] + sp.change[5:179] + sp.change[2:176] + 
            bai.change[20:194] + bai.change[16:190] +bai.change[13:187] + bai.change[12:186] + bai.change[10:184] +
-           bai.change[8:182] + bai.change[7:181] + bai.change[5:179] +
+           bai.change[8:182] + bai.change[7:181] + bai.change[5:179] + 
+           cpi.change[3:177] + 
            factor(month2[20:194]))
 summary(lm)
 
@@ -443,9 +444,9 @@ text(n+1, sarima$pred+55, "217", col="blue")
 points(n+1, 205.012, col = "green")
 text(n+2, 205.012, "205", col="green")
 
-#composite change in NFP forecast = 201,000 ----
+#composite change in NFP forecast = 201000 ----
 
 #forecast websites: 
-#https://www.estimize.com/economic_indicators/us-change-in-nonfarm-payrolls
-#http://www.tradingeconomics.com/united-states/non-farm-payrolls
+#https://www.estimize.com/economic_indicators/us-change-in-nonfarm-payrolls - 196000
+#http://www.tradingeconomics.com/united-states/non-farm-payrolls - 197000
 
