@@ -449,4 +449,3 @@ text(n+2, 205.012, "205", col="green")
 #forecast websites: 
 #https://www.estimize.com/economic_indicators/us-change-in-nonfarm-payrolls - 196000
 #http://www.tradingeconomics.com/united-states/non-farm-payrolls - 197000
-
