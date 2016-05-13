@@ -147,7 +147,7 @@ bai.ts <- ts(bai$nmfbai, frequency = 12)
 bai.change <- diff(bai.ts)
 
 #CPI-U from http://www.bls.gov/cpi/home.htm ----
-#need to download manually
+#need to download manually when april figures released
 x.cpi <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/cpi-u.csv")
 cpi <- as.data.frame(read.csv(text = x.cpi, strip.white = T))
 names(cpi) <- tolower(names(cpi))
@@ -190,8 +190,7 @@ cpi.ts <- ts(cpi$cpi, frequency = 12)
 cpi.change <- diff(cpi.ts)
 
 #Housing starts from http://www.census.gov/construction/nrc/historical_data/index.html ----
-#need to download manually
-
+#need to download manually when april figures released
 x.starts <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/starts.csv")
 starts <- as.data.frame(read.csv(text = x.starts, strip.white = T))
 
