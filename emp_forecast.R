@@ -1,4 +1,5 @@
 #employment forecast project
+#http://www.census.gov/economic-indicators/
 
 #packages ----
 library(dplyr)
@@ -145,6 +146,90 @@ bai$date <- ymd(as.character(bai$date))
 bai.ts <- ts(bai$nmfbai, frequency = 12)
 bai.change <- diff(bai.ts)
 
+#CPI-U from http://www.bls.gov/cpi/home.htm ----
+#need to download manually
+x.cpi <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/cpi-u.csv")
+cpi <- as.data.frame(read.csv(text = x.cpi, strip.white = T))
+names(cpi) <- tolower(names(cpi))
+
+names(cpi)[2] <- 1
+names(cpi)[3] <- 2
+names(cpi)[4] <- 3
+names(cpi)[5] <- 4
+names(cpi)[6] <- 5
+names(cpi)[7] <- 6
+names(cpi)[8] <- 7
+names(cpi)[9] <- 8
+names(cpi)[10] <- 9
+names(cpi)[11] <- 10
+names(cpi)[12] <- 11
+names(cpi)[13] <- 12
+
+cpi2 <- melt.data.frame(cpi, id.vars = "year")
+cpi2 <- na.omit(cpi2)
+names(cpi2)[2] <- "month"
+names(cpi2)[3] <- "cpi"
+cpi2$month <- as.numeric(cpi2$month)
+cpi2$month2 <- cpi2$month
+cpi2$month2[cpi2$month < 10] <- paste("0", cpi2$month, sep="")
+cpi2$date <- paste( cpi2$year,cpi2$month2, "01", sep="-" )
+cpi2$date2 <- ymd(cpi2$date)
+
+cpi <- cpi2
+cpi$year <- NULL
+cpi$month <- NULL
+cpi$month2 <- NULL
+cpi$date <- NULL
+names(cpi)[2] <- "date"
+cpi$year <- year(cpi$date)
+cpi$month <- month(cpi$date, label = T)
+cpi <- cpi %>% select(date, year, month, cpi)
+cpi <- cpi %>% arrange(date)
+
+cpi.ts <- ts(cpi$cpi, frequency = 12)
+cpi.change <- diff(cpi.ts)
+
+#Housing starts from http://www.census.gov/construction/nrc/historical_data/index.html ----
+#need to download manually
+
+x.starts <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/starts.csv")
+starts <- as.data.frame(read.csv(text = x.starts, strip.white = T))
+
+date <- data.frame(starts$date)
+date <- separate(date, col="starts.date", into = c("month", "year"), sep=" ")
+date$month2 <- "01"
+date$month2[date$month == "Feb"] <- "02"
+date$month2[date$month == "Mar"] <- "03"
+date$month2[date$month == "Apr"] <- "04"
+date$month2[date$month == "May"] <- "05"
+date$month2[date$month == "Jun"] <- "06"
+date$month2[date$month == "Jul"] <- "07"
+date$month2[date$month == "Aug"] <- "08"
+date$month2[date$month == "Sep"] <- "09"
+date$month2[date$month == "Oct"] <- "10"
+date$month2[date$month == "Nov"] <- "11"
+date$month2[date$month == "Dec"] <- "12"
+
+date$date2 <- paste(date$month2, "01", date$year, sep='-')
+date$date <- paste(date$month, date$year, sep=' ')
+
+date$month <- NULL
+date$year <- NULL
+date$month2 <- NULL
+
+starts <- left_join(starts, date, by = "date")
+
+starts$date <- NULL
+names(starts)[2] <- "date"
+starts$date <- mdy(starts$date)
+starts$month <- month(starts$date, label = T)
+starts$year <- year(starts$date)
+starts <- starts %>% dplyr::filter(year > 1999)
+starts <- starts %>% select(date, year, month, starts)
+
+starts.ts <- ts(starts$starts, frequency = 12)
+starts.change <- diff(starts.ts)
+
 #exploratory plots ----
 
 #jobs
@@ -179,6 +264,28 @@ acf2(sp.change)
 diff.sp.ts <- diff(sp.change)
 plot(diff.sp.ts, type="l")
 acf2(diff.sp.ts)
+
+#cpi
+plot(cpi.ts, type="l")
+acf2(cpi.ts)
+
+plot(date2, cpi.change, type="l")
+acf2(cpi.change)
+
+diff.cpi.ts <- diff(cpi.change)
+plot(diff.cpi.ts, type="l")
+acf2(diff.cpi.ts)
+
+#starts
+plot(starts.ts, type="l")
+acf2(starts.ts)
+
+plot(date2, starts.change, type="l")
+acf2(starts.change)
+
+diff.starts.ts <- diff(starts.change)
+plot(diff.starts.ts, type="l")
+acf2(diff.starts.ts)
 
 #auto-arima ----
 (model1 <- auto.arima(emp.change))
@@ -216,6 +323,8 @@ sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(4, 1, 1
 manuf.ccf <- ccf(manuf.change, emp.change) #2,4,6,9,12,14,16 months ahead
 sp.ccf <- ccf(sp.change, emp.change) #6,11,16,19 months ahead
 bai.ccf <- ccf(bai.change, emp.change) #1,5,8,9,11,13,14,16 months ahead
+cpi.ccf <- ccf(cpi.change, emp.change)
+starts.ccf <- ccf(starts.change, emp.change)
 
 month2 <- emp$month
 t <- seq(1:195)
