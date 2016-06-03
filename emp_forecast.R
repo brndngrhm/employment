@@ -21,7 +21,7 @@ library(fGarch)
 
 #jobs data from http://www.bls.gov/news.release/empsit.nr0.htm ----
 #http://www.bls.gov/webapps/legacy/cesbtab1.htm
-#use 2nd link to manually pull data each month, use seasonally adjusted, total nonfarm
+#use 2nd link to manually pull data each month, use seasonally adjusted total nonfarm starting from 2000
 
 x.emp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/emp.csv")
 emp <- as.data.frame(read.csv(text = x.emp, strip.white = T))
