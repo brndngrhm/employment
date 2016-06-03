@@ -58,6 +58,7 @@ emp$year <- year(emp$date)
 emp$month <- month(emp$date, label = T)
 emp <- emp %>% select(date, year, month, jobs)
 emp <- emp %>% arrange(date)
+write.csv(emp, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.emp.csv")
 
 emp.ts <- ts(emp$jobs, frequency = 12)
 emp.change <- diff(emp.ts)
@@ -73,6 +74,7 @@ sp$date <- ymd(sp$date)
 sp$month <- month(sp$date, label = T)
 sp$year <- year(sp$date)
 sp <- sp %>% select(date, year, month, adj.close)
+write.csv(sp, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.sp.csv")
 
 sp.ts <- ts(sp$adj.close, frequency = 12)
 sp.change <- diff(sp.ts)
@@ -135,6 +137,8 @@ manuf$month <- month(manuf$date, label = T)
 manuf$year <- year(manuf$date)
 manuf <- manuf %>% dplyr::filter(year > 1999)
 manuf <- manuf %>% select(date, year, month, gacdfna)
+write.csv(manuf, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.manuf.csv")
+
 
 manuf.ts <- ts(manuf$gacdfna, frequency = 12)
 manuf.change <- diff(manuf.ts)
@@ -144,6 +148,8 @@ manuf.change <- diff(manuf.ts)
 x.bai <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/bai.csv")
 bai <- as.data.frame(read.csv(text = x.bai, strip.white = T))
 bai$date <- ymd(as.character(bai$date))
+write.csv(bai, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.bai.csv")
+
 
 bai.ts <- ts(bai$nmfbai, frequency = 12)
 bai.change <- diff(bai.ts)
@@ -187,6 +193,8 @@ cpi$year <- year(cpi$date)
 cpi$month <- month(cpi$date, label = T)
 cpi <- cpi %>% select(date, year, month, cpi)
 cpi <- cpi %>% arrange(date)
+write.csv(cpi, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.cpi.csv")
+
 
 cpi.ts <- ts(cpi$cpi, frequency = 12)
 cpi.change <- diff(cpi.ts)
@@ -227,6 +235,8 @@ starts$month <- month(starts$date, label = T)
 starts$year <- year(starts$date)
 starts <- starts %>% dplyr::filter(year > 1999)
 starts <- starts %>% select(date, year, month, starts)
+write.csv(starts, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.starts.csv")
+
 
 starts.ts <- ts(starts$starts, frequency = 12)
 starts.change <- diff(starts.ts)
