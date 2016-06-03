@@ -4,17 +4,147 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+options(scipen=999)
+
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(reshape2)
+library(RCurl)
+library(rvest)
+library(ggplot2)
+library(scales)
+library(astsa)
+library(ggthemes)
+library(extrafont)
+library(reshape)
+library(car)
+library(forecast)
+library(fGarch)
+library(highcharter)
+library(dygraphs)
+library(xts)
+
+#load data
+emp <- read.csv(file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.emp.csv", strip.white = T)
+emp$date <- as.character(emp$date)
+emp$date <-as.POSIXct(strptime(emp$date, format = "%Y-%m-%d"))
+emp$month <- month(emp$date, label = T)
+emp.ts <- ts(emp$jobs, frequency = 12)
+emp.change <- diff(emp.ts)
+date2 <- emp$date[1:195]
+
+sp <- read.csv(file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.sp.csv", strip.white = T)
+sp$date <- as.character(sp$date)
+sp$date <- ymd(sp$date)
+sp$month <- month(sp$date, label = T)
+sp.ts <- ts(sp$adj.close, frequency = 12)
+sp.change <- diff(sp.ts)
+
+manuf <- read.csv(file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.manuf.csv", 
+                  strip.white = T)
+manuf$date <- as.character(manuf$date)
+manuf$date <- ymd(manuf$date)
+manuf$month <- month(manuf$date, label = T)
+manuf.ts <- ts(manuf$gacdfna, frequency = 12)
+manuf.change <- diff(manuf.ts)
+
+bai <- read.csv(file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.bai.csv", strip.white = T)
+bai$date <- as.character(bai$date)
+bai$date <- ymd(bai$date)
+bai$month <- month(bai$date, label = T)
+bai.ts <- ts(bai$nmfbai, frequency = 12)
+bai.change <- diff(bai.ts)
+
+cpi <- read.csv(file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.cpi.csv", strip.white = T)
+cpi$date <- as.character(cpi$date)
+cpi$date <- ymd(cpi$date)
+cpi$month <- month(cpi$date, label = T)
+cpi.ts <- ts(cpi$cpi, frequency = 12)
+cpi.change <- diff(cpi.ts)
+
+starts <- read.csv(file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/employment/formatted.starts.csv", 
+                   strip.white = T)
+starts$date <- as.character(starts$date)
+starts$date <- ymd(starts$date)
+starts$month <- month(starts$date, label = T)
+starts.ts <- ts(starts$starts, frequency = 12)
+starts.change <- diff(starts.ts)
+
+
+# highchart plotting paramaters
+hc_params <- highchart() %>%
+  hc_chart(zoomType = "x") %>%
+  hc_tooltip(crosshairs = TRUE, shared = TRUE, borderWidth = 1, shared=T) %>%
+  hc_yAxis(title=" ") %>%
+  hc_exporting(enabled = TRUE) %>%
+  hc_credits(enabled = TRUE,
+             text = "BLS",
+             href = "https://www.bls.gov/news.release/empsit.nr0.htm") %>% 
+  hc_add_theme(hc_theme_gridlight()) %>%
+  hc_legend(enabled = FALSE) %>%
+  hc_subtitle(text="Since 2000", align="left") %>%
+  hc_yAxis(title=" ")
+alignment <- "left"  #subtitle alignment
+
 ```
 
 # Forecasting the Monthly Change in Jobs {.tabset}
-Seasonally adjusted, non-farm payrolls.  
+This page is my attempt to apply various time series methods to try and forecast US monthly seasonally adjusted, non-farm payrolls.  
 The most recent jobs report from the BLS can be found [here.](http://www.bls.gov/news.release/empsit.nr0.htm)
 
-## The Forecast
-jobs time series plot
-monthly change in jobs bar chart
-forecast
+## The Forecast 
+Before developing a forecast I want to look at a few plots:  
+
+* A  time series plot of the raw numbers
+* A time series plot of the change in jobs (since that's what I'm trying to forecast)
+
+The prominent decrease in payrolls from about 2008 to 2010 show a lagged effect of the great recession (officially December 2007 to June 2009). The number of non farm payrolls have been increasing since about October of 2010.  
+```{r, echo=F}
+emp.xts <- xts(emp$jobs, order.by=emp$date, frequency=12)
+hc_params %>% 
+  highchart(type = "chart",height = 500) %>% 
+   hc_add_series_xts(emp.xts, name = "Seasonally adjusted non-farm payrolls") %>%
+  hc_title(text = "Seasonally Adjusted Non-Farm Payrolls", align = alignment)
+```
+
+```{r, echo = F}
+emp.change.date <- as.data.frame(emp$date)
+emp.change.date <- as.data.frame(emp.change.date[-1,])
+
+change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, ]`, frequency=12)
+
+```
+
+```{r, echo=F}
+emp.acf <-
+
+```
+
+
+The change in jobs again shows the effect of the great recession. Since the great recession, the average change in non-farm payrolls has been `r format(mean(change.emp.xts[114:195,]*1000), digits=2)`.  
+
+```{r, echo=F}
+emp.change.date <- as.data.frame(emp$date)
+emp.change.date <- as.data.frame(emp.change.date[-1,])
+
+change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, ]`, frequency=12)
+#mean(change.emp.xts)
+
+(emp.change.plot <- hc_params %>% 
+  highchart(type = "chart", height = 500) %>% 
+  hc_add_series_xts(change.emp.xts, name = "Monthly Change in US Employment (000s") %>%
+  hc_title(text = "Monthly Change in US Employment (000s)", align = alignment) %>%
+  hc_subtitle(text = "mean change in monthly jobs = 66,179", align = alignment) %>%
+  hc_yAxis(plotLines = list(
+           list(label = list(text = ""),
+                color = "#CD2626",
+                width = 2,
+                value = 66.1))))
+```
+
+
 
 ## Covariates
 description of covariates and plots
