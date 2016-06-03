@@ -1,0 +1,23 @@
+---
+title: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Forecasting the Monthly Change in Jobs {.tabset}
+Seasonally adjusted, non-farm payrolls.  
+The most recent jobs report from the BLS can be found [here.](http://www.bls.gov/news.release/empsit.nr0.htm)
+
+## The Forecast
+jobs time series plot
+monthly change in jobs bar chart
+forecast
+
+## Covariates
+description of covariates and plots
+
+## Me1thodology +  Sources
+methodology + sources
