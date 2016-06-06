@@ -301,31 +301,31 @@ acf2(diff.starts.ts)
 #auto-arima ----
 (model1 <- auto.arima(emp.change))
 arima.fit <- ts(fitted(arima(emp.change, order=c(0,1,1), seasonal = c(2,0,0)), frequency = 12))
-auto.arima.forecast <- sarima.for(emp.change,1,1,0,0,0,0,0,12) #1 month forecast
+auto.arima.forecast <- sarima.for(emp.change,1,0,1,1,2,0,0,12) #1 month forecast
 auto.arima.forecast$pred  
 
 #sarima ----
-#uplim=4
-#aicmat <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
-#for (i in 0:uplim){
-  #for (j in 0:uplim){
-    #aicmat[i+1,j+1]=sarima(emp.change,0,1,0,i,1,j,12,details=F,tol=0.001)$AIC}}
+uplim=4
+aicmat <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
+ for (i in 0:uplim){
+  for (j in 0:uplim){
+    aicmat[i+1,j+1]=sarima(emp.change,0,1,0,i,0,j,12,details=F,tol=0.001)$AIC}}
 
-#print(aicmat)
+print(aicmat)
 
-#aicmat2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
-#for (i in 0:uplim){
-  #for (j in 0:uplim){
-    #aicmat2[i+1,j+1]<-sarima(emp.change, i, 1, j, 4, 1, 1, 12, details=F, tol=0.001)$AIC}}
+aicmat2 <- matrix(double((uplim+1)^2),uplim+1,uplim+1)
+ for (i in 0:uplim){
+  for (j in 0:uplim){
+    aicmat2[i+1,j+1]<-sarima(emp.change, i, 1, j, 0, 0, 2, 12, details=F, tol=0.001)$AIC}}
 
-#print(aicmat2)
+print(aicmat2)
 
-(sarima(emp.change,0,1,1,4,1,1,12,details = F))
+(sarima(emp.change,0,1,1,0,1,1,12,details = F))
 
-(sarima <- sarima.for(emp.change,1,0,1,1,4,1,1,12))
+(sarima <- sarima.for(emp.change,1,0,1,1,0,0,1,12))
 
 #sarima fit
-sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(4, 1, 1))), frequency = 12)
+sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(0, 0, 1))), frequency = 12)
 
 #regresion with arma errors ----
 
