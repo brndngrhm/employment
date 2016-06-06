@@ -62,7 +62,7 @@ write.csv(emp, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/emplo
 
 emp.ts <- ts(emp$jobs, frequency = 12)
 emp.change <- diff(emp.ts)
-date2 <- emp$date[1:195]
+date2 <- emp$date[1:nrow(emp)]
 
 #sp 500 data from https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m ----
 x.sp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/sp_500.csv")
