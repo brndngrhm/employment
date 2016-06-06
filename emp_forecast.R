@@ -69,8 +69,7 @@ x.sp <- getURL("https://raw.githubusercontent.com/brndngrhm/employment/master/sp
 sp <- as.data.frame(read.csv(text = x.sp, strip.white = T))
 names(sp) <- tolower(names(sp))
 sp <- sp %>% select(date, adj.close)
-sp$date <- ydm(sp$date)
-sp$date <- ymd(sp$date)
+sp$date <- mdy(sp$date)
 sp$month <- month(sp$date, label = T)
 sp$year <- year(sp$date)
 sp <- sp %>% select(date, year, month, adj.close)
@@ -102,7 +101,7 @@ year4 <- year[381:n]
 year4.1 <- year4[1:120]
 year4.1 <- paste(200, year4.1, sep='')
 year4.1 <- data.frame(year4.1)
-year4.2 <- year4[121:196]
+year4.2 <- year4[121:197]
 year4.2 <- paste(20, year4.2, sep='')
 year4.2 <- data.frame(year4.2)
 names(year4.2)[1] <- "year4.1"
@@ -197,7 +196,7 @@ write.csv(cpi, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/emplo
 
 
 cpi.ts <- ts(cpi$cpi, frequency = 12)
-cpi.change <- diff(cpi.ts)
+cpi.change <- diff(cpi.ts)  still need to download may data!!
 
 #Housing starts from http://www.census.gov/construction/nrc/historical_data/index.html ----
 #need to download manually when april figures released
@@ -239,7 +238,7 @@ write.csv(starts, file = "C:/Users/GRA/Desktop/Misc/R Working Directory/Other/em
 
 
 starts.ts <- ts(starts$starts, frequency = 12)
-starts.change <- diff(starts.ts)
+starts.change <- diff(starts.ts) still need to download may data!!
 
 #exploratory plots ----
 
