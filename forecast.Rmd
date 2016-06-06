@@ -165,10 +165,24 @@ The prominent decrease in payrolls from about 2008 to 2010 show a lagged effect 
 <p></br></p>
 ```{r, echo=F}
 emp.xts <- xts(emp$jobs, order.by=emp$date, frequency=12)
-hc_params %>% 
-  highchart(type = "chart",height = 500) %>% 
-   hc_add_series_xts(emp.xts, name = "Seasonally adjusted non-farm payrolls") %>%
-  hc_title(text = "Seasonally Adjusted Non-Farm Payrolls", align = alignment)
+
+
+highchart(type = "chart",height = 500) %>% 
+  hc_add_series_xts(emp.xts, name = "Seasonally adjusted non-farm payrolls") %>%
+  hc_title(text = "Seasonally Adjusted US Non-Farm Payrolls", align = alignment) %>%
+  hc_subtitle(text = "Since 2000 (in thousands)", align = alignment) %>%
+  hc_chart(zoomType = "x") %>%
+  hc_tooltip(crosshairs = TRUE, shared = TRUE, borderWidth = 1, shared=T) %>%
+  hc_yAxis(title=" ") %>%
+  hc_exporting(enabled = TRUE) %>%
+  hc_credits(enabled = TRUE,
+             text = "BLS",
+             href = "https://www.bls.gov/news.release/empsit.nr0.htm") %>% 
+  hc_add_theme(hc_theme_gridlight()) %>%
+  hc_legend(enabled = FALSE) %>%
+  hc_yAxis(title=" ")
+
+
 ```
 <p></br></p>
 ```{r, echo=F}
@@ -185,16 +199,25 @@ emp.change.date <- as.data.frame(emp.change.date[-1,])
 change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, ]`, frequency=12)
 #mean(change.emp.xts)
 
-(emp.change.plot <- hc_params %>% 
   highchart(type = "chart", height = 500) %>% 
   hc_add_series_xts(change.emp.xts, name = "Monthly Change in US Employment (000s") %>%
-  hc_title(text = "Monthly Change in US Non_Farm Payrolls (000s)", align = alignment) %>%
-  hc_subtitle(text = "(mean change in monthly jobs since 2000 = 66,179)", align = alignment) %>%
+  hc_title(text = "Monthly Change in US Non-Farm Payrolls", align = alignment) %>%
+  hc_subtitle(text = "mean change in monthly jobs since 2000 = 66,179", align = alignment) %>%
   hc_yAxis(plotLines = list(
            list(label = list(text = ""),
                 color = "#CD2626",
                 width = 2,
-                value = 66.1))))
+                value = 66.1))) %>%
+  hc_chart(zoomType = "x") %>%
+  hc_tooltip(crosshairs = TRUE, shared = TRUE, borderWidth = 1, shared=T) %>%
+  hc_yAxis(title=" ") %>%
+  hc_exporting(enabled = TRUE) %>%
+  hc_credits(enabled = TRUE,
+             text = "BLS",
+             href = "https://www.bls.gov/news.release/empsit.nr0.htm") %>% 
+  hc_add_theme(hc_theme_gridlight()) %>%
+  hc_legend(enabled = FALSE) %>%
+  hc_yAxis(title=" ")
 ```
 <p></br></p>
 The ACF and PACF can give insight to the structure of the correllation of the data with itself over time. The ACF plot shows high correlation at large lags, suggesting the data is not stationary and differencing may be necessary.  
