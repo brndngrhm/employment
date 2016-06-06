@@ -147,9 +147,7 @@ reg.arma.fit <- fitted(fit)
 
 
 ```
-
 # Forecasting the Monthly Change in US Non-Farm Payrolls {.tabset}
-
 ## Exploratory Plots 
 
 Applying  various time series methods, I develop several models to forecast US monthly seasonally adjusted non-farm payrolls. I first develop an arima model using the auto.arima function from the forecast package. Then I develop a SARIMA model using the astsa package where I fine tune the number of parameters to minimize the model's AIC. My third forecast is a regression model with ARMA errors using several covariates as leading indicators. My final forecast is a composite of the three models.
@@ -225,18 +223,39 @@ The auto arima model is developed using the forecas package and the auto.arima f
 ```{r, echo=T}
 (model1 <- auto.arima(emp.change))
 ```
+<p></br></p>
 
 ### SARIMA Model
 The SARIMA model is developed using the sarima() function from the astsa package, with the number of model terms selected so as to minimize the model's AIC while still keeping the model relatively simple. I went with an ARMA(0,1,1)(0,0,1) model which resulted in a forecast of about 176,000 jobs. The model diagnostics all seem pretty good. The residuals appear like white noise, there are no significant spikes on the ACF plot of residuals, the p-vals are all pretty high and the residuals appear somewhat normally distributed.
 
 ```{r, echo=F}
-
 (sarima(emp.change,0,1,1,0,1,1,12,details = F))
 
 ```
+<p></br></p>
 
+### Regression with ARMA Errors
 
-```{r, echo=F}
+The regression model with ARMA errors is developed using several leading indicators:
+
+* Monthly S&P 500 closing prices from Yahoo [Finance](https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m)
+* Monthly Manufacturing general activity index from the [Phila. Fed](https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data)
+* Monthly Non-manufacturing business activity index from the [Fed](https://research.stlouisfed.org/fred2/series/NMFBAI#)
+* Monthly CPI-U from the [BLS](http://www.bls.gov/cpi/home.htm)
+* Monthly housing starts from the [US Census](http://www.census.gov/construction/nrc/historical_data/index.html)
+
+Using cross corellation plots of these variables with the change in monthly non-farm payrolls, alsong with variable selection techniques I chose several lagged values of these variables to forecast next month's change in non-farm payrolls. After fitting a regression model, I modeled the residuals using an ARMA(1,1) model, and applied this ARMA(1,1) model to the change in employment using the Arrima fucntion from the forecast package. This resutled in a forecast of about 205,000 jobs.
+<p></br></p>
+
+### Putting It All Together
+
+The plot below shows the fit of the three forecasts described above.
+
+* The red line is the auto.arima model
+* The blue line is the SARIMA model
+* The green line is the regression with ARMA errors model
+
+```{r, echo=F, fig.height=10, fig.width=10}
 #setting plot parameters
 n <- length(emp.change)
 time <- seq(1:n)
@@ -258,6 +277,16 @@ lines(time, sarima.fit, col="blue", type ="l")
 #adding reg.arma errors fit
 lines(time[21:195], reg.arma.fit, col="green", type="l")
 
+```
+
+
+This plot shows the forecasts of the three models.
+
+* The red line is the auto.arima model
+* The blue line is the SARIMA model
+* The green line is the regression with ARMA errors model
+
+```{r, echo=F, fig.height=5, fig.width=8}
 #base plot for adding forecast points
 plot(time, emp.change, type = "p", xlim=c(n-10, n+10))
 
@@ -276,28 +305,10 @@ text(n+2, auto.arima.pred, "189", col="red")
 
 #adding sarima forecast points and lines
 points(n+1, sarima$pred, col = "blue")
-text(n+2, sarima$pred-35, "176", col="blue")
+text(n+2, sarima$pred-45, "176", col="blue")
 
 #adding reg.arma  forecast points and lines
 points(n+1, 205.012, col = "green")
-text(n+2, 205.012 + 35, "205", col="green")
-
+text(n+2, 205.012 + 45, "205", col="green")
 
 ```
-
-
-## Methodology + Sources
-
-### ARIMA / SARIMA Models
-
-### Regression with ARMA Errors 
-
-In addition to some auto-regressive models, I develop a regression forecast with ARMA Errors using some leading indicators:
-* Monthly S&P 500 closing prices from Yahoo [Finance](https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m)
-* Monthly Manufacturing general activity index from the [Phila. Fed](https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data)
-* Monthly Non-manufacturing business activity index from the [Fed](https://research.stlouisfed.org/fred2/series/NMFBAI#)
-* Monthly CPI-U from the [BLS](http://www.bls.gov/cpi/home.htm)
-* Monthly housing starts from the [US Census](http://www.census.gov/construction/nrc/historical_data/index.html)
-
-### Sources 
-
