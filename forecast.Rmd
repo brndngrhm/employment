@@ -100,15 +100,61 @@ hc_params <- highchart() %>%
   hc_yAxis(title=" ")
 alignment <- "left"  #subtitle alignment
 
+#FORECASTS
+
+#auto.arima
+(model1 <- auto.arima(emp.change))
+arima.fit <- ts(fitted(arima(emp.change, order=c(0,1,1), seasonal = c(2,0,0)), frequency = 12))
+auto.arima.forecast <- sarima.for(emp.change,1,0,1,1,2,0,0,12) #1 month forecast
+auto.arima.forecast$pred
+
+#sarima
+(sarima(emp.change,0,1,1,0,1,1,12,details = F))
+(sarima <- sarima.for(emp.change,1,0,1,1,0,0,1,12))
+sarima.fit <- ts(fitted(arima(emp.change, order=c(0, 1, 1), seasonal = c(0, 0, 1))), frequency = 12)
+
+#regression
+month2 <- emp$month
+t <- seq(1:195)
+t2 <- t^2
+
+lm2 <- lm(emp.change[21:195] ~ t2[20:194] + emp.change[20:194] + manuf.change[17:191] + 
+           manuf.change[15:189] + manuf.change[5:179] + 
+            sp.change[2:176] + sp.change[10:184] + 
+            bai.change[20:194] + bai.change[16:190] + bai.change[10:184] + bai.change[8:182])
+
+resids <- lm2$residuals
+
+regressors <- cbind(t2[20:194], emp.change[20:194], manuf.change[17:191], manuf.change[15:189], manuf.change[5:179],
+                    sp.change[2:176], bai.change[20:194], bai.change[16:190], bai.change[10:184], bai.change[8:182])
+
+future.t2 <- t2[195]
+future.emp.change <- emp.change[195]
+future.manuf1 <- manuf.change[192]
+future.manuf2 <- manuf.change[190]
+future.manuf3 <- manuf.change[180]
+future.sp <- sp.change[177]
+future.bai1 <- bai.change[195]
+future.bai2 <- bai.change[191]
+future.bai3 <- bai.change[185]
+future.bai4 <- bai.change[183]
+future.vals <- cbind(future.t2, future.emp.change, future.manuf1, future.manuf2, future.manuf3, 
+                     future.sp, future.bai1, future.bai2, future.bai3, future.bai4)
+
+fit <- Arima(emp.change[21:195],order=c(1,1,1), xreg=regressors)
+fcast <- forecast(fit, h=1, xreg=future.vals)
+reg.arma.fit <- fitted(fit)
+
+
 ```
 
 # Forecasting the Monthly Change in US Non-Farm Payrolls {.tabset}
 
 ## Exploratory Plots 
 
-Applying  various time series methods, I develop several models to try and forecast US monthly seasonally adjusted, non-farm payrolls. I first develop an arima model using the auto.arima function from the forecast package. Then I develop a SARIMA model using the astsa package where I fine tune the number of parameters to minimize the model's AIC. My third forecast is a regression model with ARMA errors using several covariates as leading indicators. My final forecast is a composite of the three models.
+Applying  various time series methods, I develop several models to forecast US monthly seasonally adjusted non-farm payrolls. I first develop an arima model using the auto.arima function from the forecast package. Then I develop a SARIMA model using the astsa package where I fine tune the number of parameters to minimize the model's AIC. My third forecast is a regression model with ARMA errors using several covariates as leading indicators. My final forecast is a composite of the three models.
 
-My composite forecast for May 2016 non-farm payrolls was 201,000 which was wildly incorrect - the actual May 2016 change in non-farm payrolls was 36,000. I plan to update the models on a rolling basis as each month's non-farm payrolls are released.
+My composite forecast for the change in May 2016 non-farm payrolls was 189,000 which was wildly incorrect - the actual change for May was 36,000. I plan to update the models on a rolling basis as each month's non-farm payrolls are released.
 The most recent jobs report from the BLS can be found [here.](http://www.bls.gov/news.release/empsit.nr0.htm)
 
 Before developing a forecast I want to look at a few plots:  
@@ -119,7 +165,6 @@ Before developing a forecast I want to look at a few plots:
 
 The prominent decrease in payrolls from about 2008 to 2010 show a lagged effect of the great recession (officially December 2007 to June 2009). The number of non farm payrolls have been increasing since about October of 2010.  
 <p></br></p>
-
 ```{r, echo=F}
 emp.xts <- xts(emp$jobs, order.by=emp$date, frequency=12)
 hc_params %>% 
@@ -128,18 +173,13 @@ hc_params %>%
   hc_title(text = "Seasonally Adjusted Non-Farm Payrolls", align = alignment)
 ```
 <p></br></p>
-
-```{r, echo = F}
+```{r, echo=F}
 emp.change.date <- as.data.frame(emp$date)
 emp.change.date <- as.data.frame(emp.change.date[-1,])
-
 change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, ]`, frequency=12)
 ```
+The monthly change in non-farm payrolls also shows the effect of the great recession. There were 23 straight months with negative changes in non-farm payrolls. The worst month saw 823,000 jobs lost. Since the great recession ended, however, the average change in non-farm payrolls has been `r format(mean(change.emp.xts[114:195,]*1000), digits=2)`.  
 <p></br></p>
-
-The change in jobs also shows the effect of the great recession. Since the great recession, the average change in non-farm payrolls has been `r format(mean(change.emp.xts[114:195,]*1000), digits=2)`.  
-<p></br></p>
-
 ```{r, echo=F}
 emp.change.date <- as.data.frame(emp$date)
 emp.change.date <- as.data.frame(emp.change.date[-1,])
@@ -150,8 +190,8 @@ change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, 
 (emp.change.plot <- hc_params %>% 
   highchart(type = "chart", height = 500) %>% 
   hc_add_series_xts(change.emp.xts, name = "Monthly Change in US Employment (000s") %>%
-  hc_title(text = "Monthly Change in US Employment (000s)", align = alignment) %>%
-  hc_subtitle(text = "mean change in monthly jobs = 66,179", align = alignment) %>%
+  hc_title(text = "Monthly Change in US Non_Farm Payrolls (000s)", align = alignment) %>%
+  hc_subtitle(text = "(mean change in monthly jobs since 2000 = 66,179)", align = alignment) %>%
   hc_yAxis(plotLines = list(
            list(label = list(text = ""),
                 color = "#CD2626",
@@ -159,39 +199,105 @@ change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, 
                 value = 66.1))))
 ```
 <p></br></p>
-
-The ACF plot shows high correlation at large lags, suggesting the data is not stationary and differencing may be necessary.  
+The ACF and PACF can give insight to the structure of the correllation of the data with itself over time. The ACF plot shows high correlation at large lags, suggesting the data is not stationary and differencing may be necessary.  
 ```{r, echo=F}
 
 emp.acf <- acf2(emp.change, max.lag = 50)
 
 ``` 
 <p></br></p>
+The differenced data looks much easer to model and suggests an AR(1) model may be a good fit.  
+```{r, echo=F}
+emp.acf.diff <-acf2(diff(emp.change))
+```
 
-The differenced data suggests an AR(1) model may be a good fit.
+
+## The Forecast
+
+**Composite forcast for the change in non-farm payrolls for June 2016: **
+<p></br></p>
+
+This forecast is based on three models discussed in more detail below - auto.arima, SARIMA, regression with ARMA errors
+
+### Auto Arima Model
+
+The auto arima model is developed using the forecas package and the auto.arima fuction. The output of the fucntion indicates an ARMA(1,2) with 1 round of differenceing is the best model. This model resulted in a forecast of about 189,000 jobs for May 2016.
+```{r, echo=T}
+(model1 <- auto.arima(emp.change))
+```
+
+### SARIMA Model
+The SARIMA model is developed using the sarima() function from the astsa package, with the number of model terms selected so as to minimize the model's AIC while still keeping the model relatively simple. I went with an ARMA(0,1,1)(0,0,1) model which resulted in a forecast of about 176,000 jobs. The model diagnostics all seem pretty good. The residuals appear like white noise, there are no significant spikes on the ACF plot of residuals, the p-vals are all pretty high and the residuals appear somewhat normally distributed.
 
 ```{r, echo=F}
 
-emp.acf.diff <-acf2(diff(emp.change))
+(sarima(emp.change,0,1,1,0,1,1,12,details = F))
+
+```
+
+
+```{r, echo=F}
+#setting plot parameters
+n <- length(emp.change)
+time <- seq(1:n)
+auto.arima.time <- n+1
+sarima.time <- n+1
+auto.arima.pred <- auto.arima.forecast$pred
+sarima.pred <- sarima$pred
+reg.arma.pred <- fcast
+
+#base plot, checking fit
+plot(time, emp.change, type = "p")
+
+#adding auto-arima fit
+lines(time, arima.fit, col="red", type ="l")
+
+#adding sarima fit
+lines(time, sarima.fit, col="blue", type ="l")
+
+#adding reg.arma errors fit
+lines(time[21:195], reg.arma.fit, col="green", type="l")
+
+#base plot for adding forecast points
+plot(time, emp.change, type = "p", xlim=c(n-10, n+10))
+
+#adding auto-arima fit
+lines(time, arima.fit, col="red", type ="l")
+
+#adding sarima fit
+lines(time, sarima.fit, col="blue", type ="l")
+
+#adding reg.arma errors fit
+lines(time[21:195], reg.arma.fit, col="green", type="l")
+
+#adding auto.arima forecast points and lines
+points(n+1, auto.arima.pred, col = "red")
+text(n+2, auto.arima.pred, "189", col="red")
+
+#adding sarima forecast points and lines
+points(n+1, sarima$pred, col = "blue")
+text(n+2, sarima$pred-35, "176", col="blue")
+
+#adding reg.arma  forecast points and lines
+points(n+1, 205.012, col = "green")
+text(n+2, 205.012 + 35, "205", col="green")
 
 
 ```
 
 
+## Methodology + Sources
 
-## Covariates
-In addition to some auto-regressive models, I tried develop a regression forecast using some leading indicators:
+### ARIMA / SARIMA Models
 
+### Regression with ARMA Errors 
+
+In addition to some auto-regressive models, I develop a regression forecast with ARMA Errors using some leading indicators:
 * Monthly S&P 500 closing prices from Yahoo [Finance](https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m)
 * Monthly Manufacturing general activity index from the [Phila. Fed](https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data)
 * Monthly Non-manufacturing business activity index from the [Fed](https://research.stlouisfed.org/fred2/series/NMFBAI#)
 * Monthly CPI-U from the [BLS](http://www.bls.gov/cpi/home.htm)
 * Monthly housing starts from the [US Census](http://www.census.gov/construction/nrc/historical_data/index.html)
 
+### Sources 
 
-
-## The Forecast
-
-## Me1thodology +  Sources
-methodology + sources
-different models, acf plots
