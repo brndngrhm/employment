@@ -1,6 +1,7 @@
 ---
 title: ""
 output: html_document
+fontsize: 12pt
 ---
 
 ```{r setup, include=FALSE}
@@ -101,19 +102,23 @@ alignment <- "left"  #subtitle alignment
 
 ```
 
-# Forecasting the Monthly Change in Jobs {.tabset}
-This page is my attempt to apply various time series methods to try and forecast US monthly seasonally adjusted, non-farm payrolls.  
-The most recent jobs report from the BLS can be found [here.](http://www.bls.gov/news.release/empsit.nr0.htm)
+# Forecasting the Monthly Change in US Non-Farm Payrolls {.tabset}
 
-## Exploratory Plots  
+## Exploratory Plots 
+
+Applying  various time series methods, I develop several models to try and forecast US monthly seasonally adjusted, non-farm payrolls. I first develop an arima model using the auto.arima function from the forecast package. Then I develop a SARIMA model using the astsa package where I fine tune the number of parameters to minimize the model's AIC. My third forecast is a regression model with ARMA errors using several covariates as leading indicators. My final forecast is a composite of the three models.
+
+My composite forecast for May 2016 non-farm payrolls was 201,000 which was wildly incorrect - the actual May 2016 change in non-farm payrolls was 36,000. I plan to update the models on a rolling basis as each month's non-farm payrolls are released.
+The most recent jobs report from the BLS can be found [here.](http://www.bls.gov/news.release/empsit.nr0.htm)
 
 Before developing a forecast I want to look at a few plots:  
 
 * A  time series plot of the raw numbers
 * A time series plot of the change in jobs (since that's what I'm trying to forecast)
+* An ACF & PACF plot to see the correlation structure
 
 The prominent decrease in payrolls from about 2008 to 2010 show a lagged effect of the great recession (officially December 2007 to June 2009). The number of non farm payrolls have been increasing since about October of 2010.  
-
+<p></br></p>
 
 ```{r, echo=F}
 emp.xts <- xts(emp$jobs, order.by=emp$date, frequency=12)
@@ -122,17 +127,18 @@ hc_params %>%
    hc_add_series_xts(emp.xts, name = "Seasonally adjusted non-farm payrolls") %>%
   hc_title(text = "Seasonally Adjusted Non-Farm Payrolls", align = alignment)
 ```
+<p></br></p>
 
 ```{r, echo = F}
 emp.change.date <- as.data.frame(emp$date)
 emp.change.date <- as.data.frame(emp.change.date[-1,])
 
 change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, ]`, frequency=12)
-  
 ```
-
+<p></br></p>
 
 The change in jobs also shows the effect of the great recession. Since the great recession, the average change in non-farm payrolls has been `r format(mean(change.emp.xts[114:195,]*1000), digits=2)`.  
+<p></br></p>
 
 ```{r, echo=F}
 emp.change.date <- as.data.frame(emp$date)
@@ -152,15 +158,15 @@ change.emp.xts <- xts(emp.change, order.by=emp.change.date$`emp.change.date[-1, 
                 width = 2,
                 value = 66.1))))
 ```
+<p></br></p>
 
-
-The ACF plot shows high corellation at large lags, suggesting the data is not stationary and differencing may be necessary.  
+The ACF plot shows high correlation at large lags, suggesting the data is not stationary and differencing may be necessary.  
 ```{r, echo=F}
 
 emp.acf <- acf2(emp.change, max.lag = 50)
 
-
-```
+``` 
+<p></br></p>
 
 The differenced data suggests an AR(1) model may be a good fit.
 
@@ -172,8 +178,17 @@ emp.acf.diff <-acf2(diff(emp.change))
 ```
 
 
+
 ## Covariates
-description of covariates and plots
+In addition to some auto-regressive models, I tried develop a regression forecast using some leading indicators:
+
+* Monthly S&P 500 closing prices from Yahoo [Finance](https://finance.yahoo.com/q/hp?s=%5EGSPC&a=00&b=1&c=2000&d=03&e=1&f=2016&g=m)
+* Monthly Manufacturing general activity index from the [Phila. Fed](https://www.philadelphiafed.org/research-and-data/regional-economy/business-outlook-survey/historical-data)
+* Monthly Non-manufacturing business activity index from the [Fed](https://research.stlouisfed.org/fred2/series/NMFBAI#)
+* Monthly CPI-U from the [BLS](http://www.bls.gov/cpi/home.htm)
+* Monthly housing starts from the [US Census](http://www.census.gov/construction/nrc/historical_data/index.html)
+
+
 
 ## The Forecast
 
